@@ -10,14 +10,17 @@ import (
 type balanceUseCaseSuite struct {
 	suite.Suite
 	repository *mocks.Repository
+	exchanger  *mocks.Exchanger
 	useCase    balance.UseCase
 }
 
 func (suite *balanceUseCaseSuite) SetupTest() {
 	repository := new(mocks.Repository)
-	useCase := NewBalanceUseCase(repository)
+	exchanger := new(mocks.Exchanger)
+	useCase := NewBalanceUseCase(repository, exchanger)
 
 	suite.repository = repository
+	suite.exchanger = exchanger
 	suite.useCase = useCase
 }
 
@@ -37,14 +40,16 @@ func (suite *balanceUseCaseSuite) TestGetBalance_RUB() {
 func (suite *balanceUseCaseSuite) TestGetBalance_USD() {
 	var id int64 = 1
 	var amount float32 = 100
+	var converted float32 = 10
 	currency := "USD"
 
+	suite.exchanger.On("ConvertRubles", amount, currency).Return(converted, nil)
 	suite.repository.On("GetBalance", id).Return(amount, nil)
 
 	result, err := suite.useCase.GetBalance(id, currency)
 
 	suite.Nil(err, "no error when return amount")
-	suite.Equal(amount, result, "result and amount should be equal")
+	suite.Equal(converted, result, "result and amount should be equal")
 }
 
 func (suite *balanceUseCaseSuite) TestChangeBalance_Add() {

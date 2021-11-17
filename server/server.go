@@ -6,6 +6,9 @@ import (
 	"avito-intership/balance/repository/postgres"
 	"avito-intership/balance/usecase"
 	"avito-intership/db"
+	"avito-intership/exchange/repository/cache"
+	"avito-intership/exchange/repository/exchangerates"
+	exchangeUseCase "avito-intership/exchange/usecase"
 	"context"
 	"github.com/gorilla/mux"
 	"log"
@@ -23,9 +26,11 @@ type App struct {
 
 func NewApp() *App {
 	balanceRepo := postgres.NewBalanceRepository(db.GetDB())
+	exchanger := exchangeUseCase.NewExchanger(
+		exchangerates.NewExchangeRepository(exchangerates.NewNetRepository(), cache.NewRedisCache()))
 
 	return &App{
-		balance: usecase.NewBalanceUseCase(balanceRepo),
+		balance: usecase.NewBalanceUseCase(balanceRepo, exchanger),
 	}
 }
 

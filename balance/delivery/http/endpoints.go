@@ -2,6 +2,7 @@ package http
 
 import (
 	"avito-intership/balance"
+	"avito-intership/exchange"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -22,6 +23,7 @@ func NewHandler(useCase balance.UseCase) *Handler {
 type Balance struct {
 	Id     int64   `json:"id"`
 	Amount float32 `json:"amount"`
+	Error  *string `json:"error"`
 }
 
 func (h Handler) GetBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -29,20 +31,32 @@ func (h Handler) GetBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil || id < 0 {
+		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	currency := r.FormValue("currency")
 	if currency == "" {
-		currency = "RUB"
+		currency = exchange.RUB
 	}
 
 	amount, err := h.useCase.GetBalance(id, currency)
 
+	balanceResponse := Balance{id, amount, nil}
+	if err == balance.ErrConversion {
+		errMessage := err.Error()
+		balanceResponse.Error = &errMessage
+	} else if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Add("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(Balance{id, amount})
+	err = json.NewEncoder(w).Encode(balanceResponse)
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
 		w.WriteHeader(http.StatusOK)

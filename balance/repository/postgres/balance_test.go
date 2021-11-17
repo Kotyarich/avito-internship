@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"log"
 	"testing"
-	"time"
 )
 
 const (
@@ -35,8 +34,6 @@ func (suite *balanceRepositorySuite) SetupSuite() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	log.Println(err)
-	time.Sleep(100500000)
 
 	repository := NewBalanceRepository(db)
 
@@ -130,6 +127,7 @@ func (suite *balanceRepositorySuite) TearDownSuite() {
 	if err != nil {
 		log.Println(err)
 	}
+
 	if err := suite.pool.Purge(suite.resource); err != nil {
 		log.Fatalf("Could not purge resource: %s", err)
 	}
