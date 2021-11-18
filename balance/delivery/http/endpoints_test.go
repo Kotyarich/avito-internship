@@ -62,8 +62,9 @@ func (suite *balanceHandlerSuite) TestGetBalanceHandler_Ok() {
 func (suite *balanceHandlerSuite) TestChangeBalanceHandler_Ok() {
 	var id int64 = 1
 	var amount float32 = 100
+	var product int64 = 0
 
-	suite.useCase.On("ChangeBalance", id, amount).Return(nil)
+	suite.useCase.On("ChangeBalance", id, amount, product).Return(nil)
 
 	response, err := http.Post(fmt.Sprintf("%s/api/v1/balance/%d?amount=%f",
 		suite.testingServer.URL, id, amount), "", bytes.NewBuffer([]byte{}))
@@ -76,11 +77,12 @@ func (suite *balanceHandlerSuite) TestChangeBalanceHandler_Ok() {
 func (suite *balanceHandlerSuite) TestChangeBalanceHandler_LowBalance() {
 	var id int64 = 1
 	var amount float32 = -100
+	var product int64 = 1
 
-	suite.useCase.On("ChangeBalance", id, amount).Return(balance.ErrTooLowBalance)
+	suite.useCase.On("ChangeBalance", id, amount, product).Return(balance.ErrTooLowBalance)
 
-	response, err := http.Post(fmt.Sprintf("%s/api/v1/balance/%d?amount=%f",
-		suite.testingServer.URL, id, amount), "", bytes.NewBuffer([]byte{}))
+	response, err := http.Post(fmt.Sprintf("%s/api/v1/balance/%d?amount=%f&product=%d",
+		suite.testingServer.URL, id, amount, product), "", bytes.NewBuffer([]byte{}))
 	suite.NoError(err, "request should not produce error")
 	defer response.Body.Close()
 

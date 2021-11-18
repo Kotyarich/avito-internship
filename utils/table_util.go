@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 func InitTable(db *sql.DB, initFile string) error {

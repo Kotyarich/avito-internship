@@ -30,7 +30,7 @@ type balanceRepositorySuite struct {
 
 func (suite *balanceRepositorySuite) SetupSuite() {
 	db, pool, resource := utils.DockerDBUp()
-	err := utils.InitTable(db, "../../../scripts/init.sql")
+	err := utils.InitTable(db, "../../../init.sql")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -59,8 +59,9 @@ func (suite *balanceRepositorySuite) TestChangeBalance_NewBalance() {
 	amount := smallAmount
 	suite.curId += 1
 	id := suite.curId
+	var product int64 = 1
 
-	err := suite.repository.ChangeBalance(id, amount)
+	err := suite.repository.ChangeBalance(id, amount, product)
 
 	suite.NoError(err, "changing balance should not produce error")
 }
@@ -69,11 +70,12 @@ func (suite *balanceRepositorySuite) TestChangeBalance_TooLow() {
 	amount  := -bigAmount
 	suite.curId += 1
 	id := suite.curId
+	var product int64 = 1
 
-	err := suite.repository.ChangeBalance(id, smallAmount)
+	err := suite.repository.ChangeBalance(id, smallAmount, product)
 	suite.NoError(err, "positive changing balance should not produce error")
 
-	err = suite.repository.ChangeBalance(id, amount)
+	err = suite.repository.ChangeBalance(id, amount, product)
 	suite.EqualError(balance.ErrTooLowBalance, err.Error())
 }
 
@@ -81,8 +83,9 @@ func (suite *balanceRepositorySuite) TestGetBalance_NonZero() {
 	expectedAmount := smallAmount
 	suite.curId += 1
 	id := suite.curId
+	var product int64 = 1
 
-	err := suite.repository.ChangeBalance(id, smallAmount)
+	err := suite.repository.ChangeBalance(id, smallAmount, product)
 	suite.NoError(err, "positive changing balance should not produce error")
 
 	amount, err := suite.repository.GetBalance(id)
@@ -97,8 +100,9 @@ func (suite *balanceRepositorySuite) TestChangeBalance_Withdraw() {
 	srcId := suite.curId
 	suite.curId += 1
 	dstId := suite.curId
+	var product int64 = 1
 
-	err := suite.repository.ChangeBalance(srcId, smallAmount)
+	err := suite.repository.ChangeBalance(srcId, smallAmount, product)
 	suite.NoError(err, "positive changing balance should not produce error")
 
 	err = suite.repository.TransferMoney(srcId, dstId, amount)
