@@ -26,13 +26,29 @@ type Balance struct {
 	Error  *string `json:"error"`
 }
 
+type StatusMessage struct {
+	Success bool    `json:"success"`
+	Message *string `json:"message"`
+}
+
+func (h Handler) writeStatus(success bool, message *string, w *http.ResponseWriter) {
+	status := StatusMessage{
+		Success: success,
+		Message: message,
+	}
+
+	_ = json.NewEncoder(*w).Encode(status)
+}
+
 func (h Handler) GetBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil || id < 0 {
+	if err != nil || id <= 0 {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad id argument"
+		h.writeStatus(false, &message, &w)
 		return
 	}
 
@@ -50,6 +66,8 @@ func (h Handler) GetBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 	} else if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		message := "Server error"
+		h.writeStatus(false, &message, &w)
 		return
 	}
 
@@ -58,6 +76,8 @@ func (h Handler) GetBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
+		message := "Server error"
+		h.writeStatus(false, &message, &w)
 	}
 }
 
@@ -65,9 +85,11 @@ func (h Handler) ChangeBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	id, err := strconv.ParseInt(vars["id"], 10, 64)
-	if err != nil || id < 0 {
+	if err != nil || id <= 0 {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad id argument"
+		h.writeStatus(false, &message, &w)
 		return
 	}
 
@@ -75,6 +97,8 @@ func (h Handler) ChangeBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad amount argument"
+		h.writeStatus(false, &message, &w)
 		return
 	}
 
@@ -82,33 +106,44 @@ func (h Handler) ChangeBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 	if err == balance.ErrTooLowBalance {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusConflict)
+		message := err.Error()
+		h.writeStatus(false, &message, &w)
 	} else if err != nil {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
+		message := "Server error"
+		h.writeStatus(false, &message, &w)
 	} else {
 		w.WriteHeader(http.StatusOK)
+		h.writeStatus(true, nil, &w)
 	}
 }
 
 func (h Handler) TransferMoneyEndpoint(w http.ResponseWriter, r *http.Request) {
 	srcId, err := strconv.ParseInt(r.FormValue("src"), 10, 64)
-	if err != nil || srcId < 0 {
+	if err != nil || srcId <= 0 {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad src argument"
+		h.writeStatus(false, &message, &w)
 		return
 	}
 
 	dstId, err := strconv.ParseInt(r.FormValue("dst"), 10, 64)
-	if err != nil || dstId < 0 {
+	if err != nil || dstId <= 0 {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad dst argument"
+		h.writeStatus(false, &message, &w)
 		return
 	}
 
 	amount, err := strconv.ParseFloat(r.FormValue("amount"), 32)
-	if err != nil || amount < 0 {
+	if err != nil || amount <= 0 {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad amount argument"
+		h.writeStatus(false, &message, &w)
 		return
 	}
 
@@ -116,10 +151,14 @@ func (h Handler) TransferMoneyEndpoint(w http.ResponseWriter, r *http.Request) {
 	if err == balance.ErrTooLowBalance {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusConflict)
+		message := err.Error()
+		h.writeStatus(false, &message, &w)
 	} else if err != nil {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
+		message := "Server error"
+		h.writeStatus(false, &message, &w)
 	} else {
-		w.WriteHeader(http.StatusOK)
+		h.writeStatus(true, nil, &w)
 	}
 }
