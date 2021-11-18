@@ -3,6 +3,7 @@ package http
 import (
 	"avito-intership/balance"
 	"avito-intership/mocks"
+	"avito-intership/models"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 type balanceHandlerSuite struct {
@@ -36,6 +38,37 @@ func (suite *balanceHandlerSuite) SetupSuite() {
 
 func (suite *balanceHandlerSuite) TearDownSuite() {
 	defer suite.testingServer.Close()
+}
+
+func (suite *balanceHandlerSuite) TestGetHistory() {
+	var id int64 = 1
+	var page int64 = 1
+	var perPage int64 = 5
+	sort := balance.SortDate
+	desc := false
+
+	txTime := time.Now()
+	transactions := []*models.Transaction{
+		{UserId:1, Amount:1, Time:txTime, TargetId:1, Type:"fill"},
+	}
+
+	suite.useCase.On("GetHistory", id, page, perPage, sort, desc).Return(transactions, nil)
+
+	response, err := http.Get(fmt.Sprintf("%s/api/v1/balance/%d/history?page=%d&per_page=%d",
+		suite.testingServer.URL, id, page, perPage))
+	suite.NoError(err, "request should not produce error")
+	defer response.Body.Close()
+
+	var responseBody []*models.Transaction
+	err = json.NewDecoder(response.Body).Decode(&responseBody)
+	suite.NoError(err, "decoding should not produce error")
+
+	suite.Equal(http.StatusOK, response.StatusCode)
+	suite.Equal(transactions[0].Type, responseBody[0].Type)
+	suite.Equal(transactions[0].TargetId, responseBody[0].TargetId)
+	suite.Equal(transactions[0].Amount, responseBody[0].Amount)
+	suite.Equal(transactions[0].UserId, responseBody[0].UserId)
+	suite.Equal(len(transactions), len(responseBody))
 }
 
 func (suite *balanceHandlerSuite) TestGetBalanceHandler_Ok() {

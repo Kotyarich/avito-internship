@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"avito-intership/balance"
+	"avito-intership/models"
 	"avito-intership/utils"
 	"database/sql"
 	"github.com/ory/dockertest"
@@ -42,6 +43,32 @@ func (suite *balanceRepositorySuite) SetupSuite() {
 	suite.pool = pool
 	suite.resource = resource
 	suite.curId = 0
+}
+
+func (suite *balanceRepositorySuite) TestGetHistory() {
+	suite.curId += 1
+	id := suite.curId
+	var page int64 = 1
+	var perPage int64 = 5
+	sort := balance.SortDate
+	desc := false
+	var amount float32 = 1
+
+	transactions := []*models.Transaction{
+		{UserId:id, Amount:amount, TargetId:balance.RefillId, Type:"fill"},
+	}
+
+	err := suite.repository.ChangeBalance(id, amount, balance.RefillId)
+	suite.NoError(err, "changing balance should not produce error")
+
+	res, err := suite.repository.GetHistory(id, page, perPage, sort, desc)
+
+	suite.NoError(err, "getting history should not produce error")
+	suite.Equal(transactions[0].Type, res[0].Type)
+	suite.Equal(transactions[0].TargetId, res[0].TargetId)
+	suite.Equal(transactions[0].Amount, res[0].Amount)
+	suite.Equal(transactions[0].UserId, res[0].UserId)
+	suite.Equal(len(transactions), len(res))
 }
 
 func (suite *balanceRepositorySuite) TestGetBalance_Zero() {
