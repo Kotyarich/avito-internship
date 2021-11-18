@@ -55,10 +55,11 @@ func (suite *balanceUseCaseSuite) TestGetBalance_USD() {
 func (suite *balanceUseCaseSuite) TestChangeBalance_Add() {
 	var id int64 = 1
 	var amount float32 = 10
+	var productId int64 = 1
 
-	suite.repository.On("ChangeBalance", id, amount).Return(nil)
+	suite.repository.On("ChangeBalance", id, amount, productId).Return(nil)
 
-	err := suite.useCase.ChangeBalance(id, amount)
+	err := suite.useCase.ChangeBalance(id, amount, productId)
 
 	suite.Nil(err, "no error when changing balance")
 }
@@ -66,10 +67,11 @@ func (suite *balanceUseCaseSuite) TestChangeBalance_Add() {
 func (suite *balanceUseCaseSuite) TestChangeBalance_Withdraw() {
 	var id int64 = 1
 	var amount float32 = -10
+	var productId int64 = 1
 
-	suite.repository.On("ChangeBalance", id, amount).Return(nil)
+	suite.repository.On("ChangeBalance", id, amount, productId).Return(nil)
 
-	err := suite.useCase.ChangeBalance(id, amount)
+	err := suite.useCase.ChangeBalance(id, amount, productId)
 
 	suite.Nil(err, "no error when changing balance")
 }
@@ -77,10 +79,11 @@ func (suite *balanceUseCaseSuite) TestChangeBalance_Withdraw() {
 func (suite *balanceUseCaseSuite) TestChangeBalance_TooLowBalance() {
 	var id int64 = 1
 	var amount float32 = 10
+	var productId int64 = 1
 
-	suite.repository.On("ChangeBalance", id, amount).Return(balance.ErrTooLowBalance)
+	suite.repository.On("ChangeBalance", id, amount, productId).Return(balance.ErrTooLowBalance)
 
-	err := suite.useCase.ChangeBalance(id, amount)
+	err := suite.useCase.ChangeBalance(id, amount, productId)
 
 	suite.Equal(balance.ErrTooLowBalance, err, "too low balance error expected")
 }

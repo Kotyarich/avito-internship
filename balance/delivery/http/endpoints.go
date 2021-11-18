@@ -37,6 +37,7 @@ func (h Handler) writeStatus(success bool, message *string, w *http.ResponseWrit
 		Message: message,
 	}
 
+	(*w).Header().Add("Content-Type", "application/json")
 	_ = json.NewEncoder(*w).Encode(status)
 }
 
@@ -102,7 +103,19 @@ func (h Handler) ChangeBalanceEndpoint(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.useCase.ChangeBalance(id, float32(amount))
+	product := balance.RefillId
+	if amount < 0 {
+		product, err = strconv.ParseInt(r.FormValue("product"), 10, 32)
+		if err != nil || product < 0 {
+			log.Println(err.Error())
+			w.WriteHeader(http.StatusBadRequest)
+			message := "Bad product argument"
+			h.writeStatus(false, &message, &w)
+			return
+		}
+	}
+
+	err = h.useCase.ChangeBalance(id, float32(amount), product)
 	if err == balance.ErrTooLowBalance {
 		log.Println(err.Error())
 		w.WriteHeader(http.StatusConflict)
@@ -160,5 +173,66 @@ func (h Handler) TransferMoneyEndpoint(w http.ResponseWriter, r *http.Request) {
 		h.writeStatus(false, &message, &w)
 	} else {
 		h.writeStatus(true, nil, &w)
+	}
+}
+
+func (h Handler) GetHistoryEndpoint(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil || id <= 0 {
+		log.Println(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad id argument"
+		h.writeStatus(false, &message, &w)
+		return
+	}
+
+	page, err := strconv.ParseInt(r.FormValue("page"), 10, 64)
+	if err != nil || page <= 0 {
+		log.Println(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad page argument"
+		h.writeStatus(false, &message, &w)
+		return
+	}
+
+	perPage, err := strconv.ParseInt(r.FormValue("per_page"), 10, 64)
+	if err != nil || perPage <= 0 {
+		log.Println(err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		message := "Bad per_page argument"
+		h.writeStatus(false, &message, &w)
+		return
+	}
+
+	sortValue := r.FormValue("sort")
+	sort := balance.SortDate
+	if sortValue == "amount" {
+		sort = balance.SortAmount
+	}
+
+	descValue := r.FormValue("desc")
+	desc := false
+	if descValue == "true" {
+		desc = true
+	}
+
+	transactions, err := h.useCase.GetHistory(id, page, perPage, sort, desc)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		message := "Server error"
+		h.writeStatus(false, &message, &w)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(transactions)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		message := "Server error"
+		h.writeStatus(false, &message, &w)
 	}
 }

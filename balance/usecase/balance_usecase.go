@@ -3,6 +3,7 @@ package usecase
 import (
 	"avito-intership/balance"
 	"avito-intership/exchange"
+	"avito-intership/models"
 	"log"
 )
 
@@ -38,12 +39,21 @@ func (u BalanceUseCase) GetBalance(userId int64, currency string) (float32, erro
 	return amount, nil
 }
 
-func (u BalanceUseCase) ChangeBalance(userId int64, amount float32) error {
-	err := u.balanceRepo.ChangeBalance(userId, amount)
+func (u BalanceUseCase) ChangeBalance(userId int64, amount float32, productId int64) error {
+	err := u.balanceRepo.ChangeBalance(userId, amount, productId)
 	return err
 }
 
 func (u BalanceUseCase) TransferMoney(srcUserId int64, dstUserId int64, amount float32) error {
 	err := u.balanceRepo.TransferMoney(srcUserId, dstUserId, amount)
 	return err
+}
+
+func (u BalanceUseCase) GetHistory(userId int64, page int64, perPage int64, sort int, desc bool) ([]*models.Transaction, error) {
+	transactions, err := u.balanceRepo.GetHistory(userId, page, perPage, sort, desc)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, nil
 }

@@ -15,5 +15,7 @@ func RegisterEndpoints(router *mux.Router, uc balance.UseCase) {
 		Methods(http.MethodOptions, http.MethodPost)
 	router.HandleFunc("/api/v1/transfer", handler.TransferMoneyEndpoint).
 		Methods(http.MethodOptions, http.MethodPost)
+	router.HandleFunc("/api/v1/balance/{id:[0-9]+}/history", handler.GetHistoryEndpoint).
+		Methods(http.MethodGet, http.MethodOptions)
 }
 
